@@ -29,7 +29,7 @@ spec:
     spec:
       containers:
         - name: web
-          image: ghcr.io/jirn073-76/tgm-web:latest
+          image: ghcr.io/jirn073-76/tgm-web:e6a9f2cdc741910a6fc4ea14445da035c83351da
           imagePullPolicy: Always
           ports:
             - containerPort: 80
