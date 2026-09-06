@@ -1,0 +1,82 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: cicd
+  labels:
+    labor: i7
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: tgm-web
+  namespace: cicd
+  labels:
+    app: tgm-web
+spec:
+  replicas: 2
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  selector:
+    matchLabels:
+      app: tgm-web
+  template:
+    metadata:
+      labels:
+        app: tgm-web
+    spec:
+      containers:
+        - name: web
+          image: ghcr.io/jirn073-76/tgm-web:latest
+          imagePullPolicy: Always
+          ports:
+            - containerPort: 80
+              name: http
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 80
+            periodSeconds: 5
+          resources:
+            requests:
+              cpu: 10m
+              memory: 16Mi
+            limits:
+              cpu: 200m
+              memory: 64Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: tgm-web
+  namespace: cicd
+  labels:
+    app: tgm-web
+spec:
+  type: ClusterIP
+  selector:
+    app: tgm-web
+  ports:
+    - name: http
+      port: 80
+      targetPort: 80
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: tgm-web
+  namespace: cicd
+spec:
+  ingressClassName: traefik
+  rules:
+    - http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: tgm-web
+                port:
+                  number: 80

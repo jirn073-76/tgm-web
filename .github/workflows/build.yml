@@ -1,0 +1,42 @@
+name: build-and-push
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Quellcode holen
+        uses: actions/checkout@v4
+
+      - name: Besitzername in Kleinbuchstaben
+        id: namen
+        run: echo "owner=${GITHUB_REPOSITORY_OWNER,,}" >> "$GITHUB_OUTPUT"
+
+      - name: An GHCR anmelden
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Image bauen und pushen
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          tags: |
+            ghcr.io/${{ steps.namen.outputs.owner }}/tgm-web:${{ github.sha }}
+            ghcr.io/${{ steps.namen.outputs.owner }}/tgm-web:latest
+
+      - name: Zusammenfassung schreiben
+        run: |
+          echo "Gebaut: ghcr.io/${{ steps.namen.outputs.owner }}/tgm-web:${{ github.sha }}" >> "$GITHUB_STEP_SUMMARY"
